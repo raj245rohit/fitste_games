@@ -22,9 +22,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const toastContainerEl = document.getElementById('toast-container');
   const btnResetFilters = document.getElementById('btn-reset-filters');
   const btnSoundToggle = document.getElementById('btn-sound-toggle');
-  const btnDevInfo = document.getElementById('btn-dev-info');
-  const devModal = document.getElementById('dev-modal');
-  const btnCloseDevModal = document.getElementById('btn-close-dev-modal');
   const viewGridBtn = document.getElementById('view-grid');
   const viewListBtn = document.getElementById('view-list');
 
@@ -366,19 +363,6 @@ document.addEventListener('DOMContentLoaded', () => {
     btnSoundToggle.classList.toggle('active', !audioEnabled);
   });
 
-  btnDevInfo.addEventListener('click', () => {
-    playSound('click');
-    devModal.classList.remove('hidden');
-  });
-
-  btnCloseDevModal.addEventListener('click', () => {
-    devModal.classList.add('hidden');
-  });
-
-  devModal.addEventListener('click', (e) => {
-    if (e.target === devModal) devModal.classList.add('hidden');
-  });
-
   // Game Player Controls
   btnClosePlayer.addEventListener('click', closeGamePlayer);
 
@@ -412,9 +396,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (e.key === 'Escape') {
       if (!gamePlayerModal.classList.contains('hidden')) {
         closeGamePlayer();
-      }
-      if (!devModal.classList.contains('hidden')) {
-        devModal.classList.add('hidden');
       }
     }
   });
