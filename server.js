@@ -10,6 +10,12 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3000;
 const ROOT_DIR = __dirname;
+const GAMES_DIR = path.join(ROOT_DIR, 'Games');
+
+// Ensure Games directory exists
+if (!fs.existsSync(GAMES_DIR)) {
+  fs.mkdirSync(GAMES_DIR, { recursive: true });
+}
 
 app.use(cors());
 
@@ -59,10 +65,11 @@ function inferCategoryAndIcon(title, description = '') {
 }
 
 /**
- * Scan directory and discover game folders dynamically
+ * Scan Games directory and discover game folders dynamically
  */
 function discoverGames() {
-  const items = fs.readdirSync(ROOT_DIR, { withFileTypes: true });
+  if (!fs.existsSync(GAMES_DIR)) return [];
+  const items = fs.readdirSync(GAMES_DIR, { withFileTypes: true });
   const games = [];
 
   for (const item of items) {
@@ -70,7 +77,7 @@ function discoverGames() {
     const folderName = item.name;
     if (IGNORED_NAMES.has(folderName) || folderName.startsWith('.')) continue;
 
-    const gameDirPath = path.join(ROOT_DIR, folderName);
+    const gameDirPath = path.join(GAMES_DIR, folderName);
 
     // Check if valid game directory (has index.html or dist/index.html or package.json)
     let entryPath = '';
@@ -179,7 +186,7 @@ function discoverGames() {
 // Serve games static files with dynamic base URL support
 app.use('/games/:folderName', (req, res, next) => {
   const folderName = req.params.folderName;
-  const targetDir = path.join(ROOT_DIR, folderName);
+  const targetDir = path.join(GAMES_DIR, folderName);
 
   if (!fs.existsSync(targetDir) || IGNORED_NAMES.has(folderName)) {
     return res.status(404).send('Game not found');
@@ -218,12 +225,12 @@ app.use('/games/:folderName', (req, res, next) => {
 
 // Also serve fallback static assets if games request root assets like /assets/... or /favicon.svg
 app.use('/assets', (req, res, next) => {
-  // Try finding in RGB Jump/dist/assets or Flip_Bird/dist/assets
-  const rgbAssets = path.join(ROOT_DIR, 'RGB Jump', 'dist', 'assets', req.path);
+  // Try finding in Games/RGB Jump/dist/assets or Games/Flip_Bird/dist/assets
+  const rgbAssets = path.join(GAMES_DIR, 'RGB Jump', 'dist', 'assets', req.path);
   if (fs.existsSync(rgbAssets)) {
     return res.sendFile(rgbAssets);
   }
-  const flipAssets = path.join(ROOT_DIR, 'Flip_Bird', 'dist', 'assets', req.path);
+  const flipAssets = path.join(GAMES_DIR, 'Flip_Bird', 'dist', 'assets', req.path);
   if (fs.existsSync(flipAssets)) {
     return res.sendFile(flipAssets);
   }
@@ -231,7 +238,7 @@ app.use('/assets', (req, res, next) => {
 });
 
 app.get('/favicon.svg', (req, res) => {
-  const rgbFav = path.join(ROOT_DIR, 'RGB Jump', 'dist', 'favicon.svg');
+  const rgbFav = path.join(GAMES_DIR, 'RGB Jump', 'dist', 'favicon.svg');
   if (fs.existsSync(rgbFav)) {
     return res.sendFile(rgbFav);
   }
@@ -276,14 +283,14 @@ function broadcastGamesUpdate() {
   }
 }
 
-// Watch directory for changes (new folders added or removed)
+// Watch Games directory for changes (new folders added or removed)
 let watchTimeout = null;
-fs.watch(ROOT_DIR, { recursive: false }, (eventType, filename) => {
+fs.watch(GAMES_DIR, { recursive: false }, (eventType, filename) => {
   if (filename && !IGNORED_NAMES.has(filename) && !filename.startsWith('.')) {
     // Debounce watcher notifications
     clearTimeout(watchTimeout);
     watchTimeout = setTimeout(() => {
-      console.log(`[Watcher] Directory change detected: ${filename} (${eventType})`);
+      console.log(`[Watcher] Games directory change detected: ${filename} (${eventType})`);
       broadcastGamesUpdate();
     }, 500);
   }
@@ -303,8 +310,8 @@ const startServer = (port) => {
   ======================================================
   🚀 FITSTE GAMES HUB IS RUNNING!
   🌐 Hub URL: http://localhost:${port}
-  📁 Watching directory: ${ROOT_DIR}
-  🎮 Auto-append enabled for new game folders!
+  📁 Watching directory: ${GAMES_DIR}
+  🎮 Games directory initialized!
   ======================================================
   `);
   });
@@ -320,4 +327,3 @@ const startServer = (port) => {
 };
 
 startServer(PORT);
-
