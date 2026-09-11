@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FITSTE GAMES - AI Fitness Game Arcade Hub</title>
+  <meta name="description" content="Discover and play AI-powered camera fitness games. Automatic game folder discovery, posture tracking, real-time leaderboard, and instant arcade fun." />
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body class="dark-theme">
+  <!-- Background Glow & Particle Grid -->
+  <div class="ambient-glow glow-1"></div>
+  <div class="ambient-glow glow-2"></div>
+  <div class="grid-overlay"></div>
+
+  <!-- Header Navigation -->
+  <header class="navbar glass-header">
+    <div class="nav-container">
+      <div class="brand">
+        <div class="brand-logo-icon">
+          <i class="fa-solid fa-bolt-lightning"></i>
+        </div>
+        <div class="brand-text">
+          <span class="brand-name">FITSTE</span>
+          <span class="brand-tag">GAMES HUB</span>
+        </div>
+      </div>
+
+      <div class="watcher-status-badge" id="watcher-badge" title="Automatically watching /Fitste Games directory for new game folders">
+        <span class="pulse-dot"></span>
+        <span class="badge-text"><i class="fa-solid fa-folder-tree"></i> LIVE AUTO-SYNC: <strong id="game-count">2</strong> TITLES</span>
+      </div>
+
+      <div class="header-actions">
+        <button id="btn-sound-toggle" class="icon-btn glass-btn" title="Toggle UI Audio">
+          <i class="fa-solid fa-volume-high"></i>
+        </button>
+        <button id="btn-dev-info" class="btn-secondary-sm glass-btn">
+          <i class="fa-solid fa-circle-info"></i> How to Add Games
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Layout -->
+  <main class="main-layout">
+    
+    <!-- Hero Spotlight Section -->
+    <section class="hero-spotlight" id="hero-spotlight">
+      <div class="spotlight-card glass-card">
+        <div class="spotlight-backdrop" id="spotlight-bg"></div>
+        <div class="spotlight-content">
+          <div class="spotlight-badge">
+            <i class="fa-solid fa-fire"></i> FEATURED AI FITNESS GAME
+          </div>
+          <h1 class="spotlight-title" id="spotlight-title">RGB JUMP</h1>
+          <p class="spotlight-desc" id="spotlight-desc">
+            High-energy camera-based fitness game powered by real-time AI pose tracking. Jump into Red, Green, or Blue zones to score!
+          </p>
+
+          <div class="spotlight-tags" id="spotlight-tags">
+            <span class="tag tag-magenta"><i class="fa-solid fa-person-running"></i> Jump & Cardio</span>
+            <span class="tag tag-cyan"><i class="fa-solid fa-camera"></i> AI Pose Tracking</span>
+            <span class="tag tag-amber"><i class="fa-solid fa-fire-flame-curved"></i> High Burn</span>
+          </div>
+
+          <div class="spotlight-actions">
+            <button class="btn-primary btn-launch-spotlight" id="btn-spotlight-play">
+              <i class="fa-solid fa-play"></i> PLAY NOW
+            </button>
+            <button class="btn-secondary glass-btn" id="btn-spotlight-info">
+              <i class="fa-solid fa-sliders"></i> Game Controls
+            </button>
+          </div>
+        </div>
+
+        <div class="spotlight-visual">
+          <div class="spotlight-image-wrapper">
+            <img id="spotlight-img" src="" alt="Featured Game" />
+            <div class="spotlight-overlay-gradient"></div>
+            <div class="play-pulse-ring" id="spotlight-play-ring">
+              <i class="fa-solid fa-circle-play"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Games Collection Controls -->
+    <section class="collection-controls">
+      <div class="controls-bar glass-panel">
+        <div class="search-box">
+          <i class="fa-solid fa-magnifying-glass search-icon"></i>
+          <input type="text" id="search-input" placeholder="Search games by name, muscle group, or posture..." />
+          <button id="clear-search" class="clear-btn hidden"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+
+        <div class="category-pills" id="category-pills">
+          <button class="pill-btn active" data-category="all">
+            <i class="fa-solid fa-gamepad"></i> All Games
+          </button>
+          <button class="pill-btn" data-category="Push-Up & Arms">
+            <i class="fa-solid fa-dumbbell"></i> Push-Up
+          </button>
+          <button class="pill-btn" data-category="Jump & Cardio">
+            <i class="fa-solid fa-bolt"></i> Cardio & Jump
+          </button>
+          <button class="pill-btn" data-category="AI Camera Fitness">
+            <i class="fa-solid fa-eye"></i> Pose Tracking
+          </button>
+        </div>
+
+        <div class="view-options">
+          <button class="view-btn active" id="view-grid" title="Grid View"><i class="fa-solid fa-border-all"></i></button>
+          <button class="view-btn" id="view-list" title="Compact List"><i class="fa-solid fa-list"></i></button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Games Grid Container -->
+    <section class="games-section">
+      <div class="section-header">
+        <h2 class="section-title">
+          <i class="fa-solid fa-trophy"></i> FITNESS ARCADE COLLECTION
+        </h2>
+        <span class="live-indicator">
+          <i class="fa-solid fa-circle"></i> Auto-discovers folders in real-time
+        </span>
+      </div>
+
+      <!-- Empty / Loading State -->
+      <div id="loading-state" class="state-container">
+        <div class="spinner"></div>
+        <p>Discovering game folders in <code>/Fitste Games</code>...</p>
+      </div>
+
+      <div id="empty-state" class="state-container hidden">
+        <div class="state-icon"><i class="fa-solid fa-folder-open"></i></div>
+        <h3>No Games Found Matching Filter</h3>
+        <p>Try resetting your search query or add a new game directory to this folder.</p>
+        <button class="btn-secondary glass-btn" id="btn-reset-filters">Reset Filters</button>
+      </div>
+
+      <!-- Game Cards Grid -->
+      <div id="games-grid" class="games-grid grid-layout">
+        <!-- Rendered dynamically via app.js -->
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer glass-footer">
+    <div class="footer-container">
+      <div class="footer-brand">
+        <span class="brand-name">FITSTE GAMES</span> &copy; 2026 Interactive Motion Fitness Platform
+      </div>
+      <div class="footer-hint">
+        <i class="fa-solid fa-wand-magic-sparkles"></i> Tip: Simply create a new folder with an <code>index.html</code> file in this root directory to automatically publish a game!
+      </div>
+    </div>
+  </footer>
+
+  <!-- Notification Toast Container -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- Developer Instructions Drawer / Modal -->
+  <div id="dev-modal" class="modal-backdrop hidden">
+    <div class="modal-card glass-modal">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-folder-plus"></i> How Auto-Append Works</h3>
+        <button class="close-btn" id="btn-close-dev-modal"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-intro">
+          This landing page automatically monitors the <code>/Users/apple/Desktop/Fitste Games</code> directory in real-time!
+        </p>
+
+        <div class="step-list">
+          <div class="step-item">
+            <div class="step-num">1</div>
+            <div class="step-text">
+              <strong>Create a new folder</strong> inside this workspace folder (e.g. <code>Squat_Hero</code> or <code>Yoga_Master</code>).
+            </div>
+          </div>
+
+          <div class="step-item">
+            <div class="step-num">2</div>
+            <div class="step-text">
+              <strong>Add your game files</strong> including an <code>index.html</code> (or Vite <code>dist/index.html</code>).
+            </div>
+          </div>
+
+          <div class="step-item">
+            <div class="step-num">3</div>
+            <div class="step-text">
+              <strong>Optional Custom Metadata:</strong> Create a <code>game.json</code> in your folder with custom titles, tags, and instructions:
+              <pre><code>{
+  "title": "Squat Hero",
+  "description": "Lower body fitness game",
+  "category": "Squats & Lower Body",
+  "icon": "🏋️",
+  "color": "green"
+}</code></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fullscreen Game Player Modal Overlay -->
+  <div id="game-player-modal" class="game-player-modal hidden">
+    <div class="player-header glass-header">
+      <div class="player-title-info">
+        <button id="btn-close-player" class="btn-back-hub glass-btn">
+          <i class="fa-solid fa-arrow-left"></i> BACK TO HUB
+        </button>
+        <div class="player-heading">
+          <h2 id="player-game-title">RGB Jump</h2>
+          <span id="player-game-category" class="player-tag">Jump & Cardio</span>
+        </div>
+      </div>
+
+      <div class="player-controls">
+        <button id="btn-reload-game" class="icon-btn glass-btn" title="Restart / Reload Game">
+          <i class="fa-solid fa-rotate-right"></i>
+        </button>
+        <button id="btn-info-toggle" class="icon-btn glass-btn" title="Toggle Game Guide">
+          <i class="fa-solid fa-book-open"></i>
+        </button>
+        <button id="btn-fullscreen" class="icon-btn glass-btn" title="Toggle Fullscreen">
+          <i class="fa-solid fa-expand"></i>
+        </button>
+      </div>
+    </div>
+
+    <div class="player-container">
+      <!-- Embedded Game Iframe -->
+      <iframe id="game-iframe" src="about:blank" allow="camera; microphone; autoplay; fullscreen" frameborder="0"></iframe>
+
+      <!-- Game Instructions Sidebar Drawer -->
+      <aside id="game-guide-drawer" class="game-guide-drawer glass-panel hidden">
+        <div class="drawer-header">
+          <h3><i class="fa-solid fa-gamepad"></i> Game Guide & Tips</h3>
+          <button id="btn-close-guide" class="close-btn"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="drawer-content">
+          <p id="guide-description">Game description goes here...</p>
+
+          <h4><i class="fa-solid fa-list-check"></i> Instructions</h4>
+          <ul id="guide-instructions-list">
+            <!-- Rendered dynamically -->
+          </ul>
+
+          <div class="webcam-tip-box glass-card">
+            <i class="fa-solid fa-video"></i>
+            <div>
+              <strong>Webcam Setup Tip:</strong>
+              <p>Place your camera at waist-height and step back 5-7 feet so your full body frame is visible.</p>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <!-- JavaScript Bundle -->
+  <script src="app.js"></script>
+</body>
+</html>
