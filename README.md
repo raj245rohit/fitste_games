@@ -84,13 +84,13 @@ If you deploy this server on a VPS and access it on a phone:
 #### Option A: Free Instant HTTPS Tunnel (No Setup Required)
 Run this command on your VPS while the server is running:
 ```bash
-npx localtunnel --port 3001
+npx localtunnel --port 3000
 ```
 It gives you a secure `https://xxxx.loca.lt` URL that you can immediately open on your phone!
 
 #### Option B: Cloudflare Tunnel (Recommended for Production)
 ```bash
-cloudflared tunnel --url http://localhost:3001
+cloudflared tunnel --url http://localhost:3000
 ```
 
 #### Option C: Nginx / Caddy reverse proxy with Certbot SSL
