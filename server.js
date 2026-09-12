@@ -19,6 +19,12 @@ if (!fs.existsSync(GAMES_DIR)) {
 
 app.use(cors());
 
+// Permissions-Policy header for mobile browser camera access in iframes
+app.use((req, res, next) => {
+  res.setHeader('Permissions-Policy', 'camera=(self "*"), microphone=(self "*"), autoplay=(self "*")');
+  next();
+});
+
 // List of folder names or files to ignore when searching for games
 const IGNORED_NAMES = new Set([
   'node_modules',

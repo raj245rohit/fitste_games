@@ -69,6 +69,38 @@ http://localhost:3000
 
 ---
 
+## 📱 Mobile Camera Access & HTTPS Requirements
+
+> [!IMPORTANT]
+> **HTTPS is Required for Webcams on Mobile Devices!**  
+> Modern mobile browsers (**iOS Safari**, **Android Chrome**, and Firefox Mobile) **STRICTLY DISABLE camera permissions (`getUserMedia`) over plain `http://`** when accessed from external IP addresses or VPS domains.
+
+If you deploy this server on a VPS and access it on a phone:
+- **Over `http://your-vps-ip:3000`**: Mobile browsers block camera permissions and disable `navigator.mediaDevices`.
+- **Over `https://`**: Mobile browsers prompt for camera permissions, enabling full mobile gameplay!
+
+### 🔒 Quick Ways to Enable HTTPS / SSL on your VPS:
+
+#### Option A: Free Instant HTTPS Tunnel (No Setup Required)
+Run this command on your VPS while the server is running:
+```bash
+npx localtunnel --port 3001
+```
+It gives you a secure `https://xxxx.loca.lt` URL that you can immediately open on your phone!
+
+#### Option B: Cloudflare Tunnel (Recommended for Production)
+```bash
+cloudflared tunnel --url http://localhost:3001
+```
+
+#### Option C: Nginx / Caddy reverse proxy with Certbot SSL
+If you have a domain pointing to your VPS, use Let's Encrypt / Certbot:
+```bash
+sudo certbot --nginx -d yourdomain.com
+```
+
+---
+
 ## ➕ How to Add New Games
 
 To add a new game to the hub:

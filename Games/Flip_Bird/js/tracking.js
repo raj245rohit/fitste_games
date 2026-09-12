@@ -104,42 +104,71 @@ export class PoseTracker {
   }
 
   async startCamera(onFrameCallback) {
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      alert('Camera access is not supported by your browser.');
+    if (this.videoElement) {
+      this.videoElement.setAttribute('playsinline', '');
+      this.videoElement.setAttribute('webkit-playsinline', '');
+      this.videoElement.setAttribute('muted', '');
+      this.videoElement.muted = true;
+    }
+
+    let getUserMediaFn = null;
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+      getUserMediaFn = (constraints) => navigator.mediaDevices.getUserMedia(constraints);
+    } else if (navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia) {
+      const legacyFn = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia;
+      getUserMediaFn = (constraints) => new Promise((resolve, reject) => legacyFn.call(navigator, constraints, resolve, reject));
+    }
+
+    if (!getUserMediaFn) {
+      const isHttp = !window.isSecureContext && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
+      if (isHttp) {
+        alert('🔒 HTTPS Required for Mobile Camera Access\n\nMobile browsers (iOS Safari & Android Chrome) disable camera permissions over HTTP.\n\nPlease open this webpage using HTTPS (or set up an SSL certificate / Cloudflare Tunnel on your server).');
+      } else {
+        alert('Camera access is not supported by your browser or permission was denied.');
+      }
       return false;
     }
 
     try {
       const constraints = {
         video: {
-          facingMode: 'user', // Front camera preference
+          facingMode: 'user',
           width: { ideal: 1280 },
           height: { ideal: 720 }
         },
         audio: false
       };
 
-      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      let stream;
+      try {
+        stream = await getUserMediaFn(constraints);
+      } catch (err) {
+        console.warn('Ideal video constraints failed, trying basic facingMode constraint:', err);
+        try {
+          stream = await getUserMediaFn({ video: { facingMode: 'user' }, audio: false });
+        } catch (err2) {
+          console.warn('FacingMode constraint failed, trying default video:', err2);
+          stream = await getUserMediaFn({ video: true, audio: false });
+        }
+      }
+
       this.videoElement.srcObject = stream;
 
       return new Promise((resolve) => {
-        this.videoElement.onloadedmetadata = () => {
-          this.videoElement.play();
-          resolve(true);
+        const playPromise = () => {
+          this.videoElement.play().then(() => resolve(true)).catch(() => resolve(true));
         };
+
+        if (this.videoElement.readyState >= 2) {
+          playPromise();
+        } else {
+          this.videoElement.onloadedmetadata = playPromise;
+        }
       });
     } catch (err) {
       console.error('Error opening camera stream:', err);
-      // Fallback to basic user camera constraint
-      try {
-        const fallbackStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
-        this.videoElement.srcObject = fallbackStream;
-        await this.videoElement.play();
-        return true;
-      } catch (fallbackErr) {
-        console.error('Camera fallback failed:', fallbackErr);
-        return false;
-      }
+      alert('Could not access camera. Please check camera permissions in your browser settings.');
+      return false;
     }
   }
 

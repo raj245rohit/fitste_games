@@ -56,25 +56,56 @@ export const CalibrationScreen: React.FC<CalibrationScreenProps> = ({
 
       // 2. Start Video Webcam Stream
       try {
-        stream = await navigator.mediaDevices.getUserMedia({
-          video: {
-            width: { ideal: 1280 },
-            height: { ideal: 720 },
-            facingMode: 'user',
-          },
-          audio: false,
-        });
+        let getUserMediaFn: ((constraints: any) => Promise<MediaStream>) | null = null;
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+          getUserMediaFn = (c: any) => navigator.mediaDevices.getUserMedia(c);
+        } else if ((navigator as any).getUserMedia || (navigator as any).webkitGetUserMedia || (navigator as any).mozGetUserMedia) {
+          const legacyFn = (navigator as any).getUserMedia || (navigator as any).webkitGetUserMedia || (navigator as any).mozGetUserMedia;
+          getUserMediaFn = (c: any) => new Promise((res, rej) => legacyFn.call(navigator, c, res, rej));
+        }
+
+        if (!getUserMediaFn) {
+          const isHttp = !window.isSecureContext && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
+          if (isHttp) {
+            setCameraError('🔒 HTTPS Required for Mobile Camera Access: Mobile browsers (iOS Safari & Android Chrome) disable camera permissions over plain HTTP. Please access this website using HTTPS (or set up SSL/tunnel on your server).');
+          } else {
+            setCameraError('Camera access is not supported by your browser or permission was denied.');
+          }
+          return;
+        }
+
+        if (videoRef.current) {
+          videoRef.current.setAttribute('playsinline', '');
+          videoRef.current.setAttribute('webkit-playsinline', '');
+          videoRef.current.setAttribute('muted', '');
+          videoRef.current.muted = true;
+        }
+
+        try {
+          stream = await getUserMediaFn({
+            video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' },
+            audio: false,
+          });
+        } catch {
+          stream = await getUserMediaFn({ video: { facingMode: 'user' }, audio: false })
+            .catch(() => getUserMediaFn!({ video: true, audio: false }));
+        }
 
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
-          videoRef.current.onloadedmetadata = () => {
-            videoRef.current?.play();
+          const playVideo = () => {
+            videoRef.current?.play().catch(() => {});
             setCameraActive(true);
           };
+          if (videoRef.current.readyState >= 2) {
+            playVideo();
+          } else {
+            videoRef.current.onloadedmetadata = playVideo;
+          }
         }
       } catch (camErr) {
         console.error('Camera stream access denied:', camErr);
-        setCameraError('Webcam access was denied or no camera found. Please allow camera permissions.');
+        setCameraError('Webcam access was denied or no camera found. Please allow camera permissions in your browser settings.');
       }
     };
 

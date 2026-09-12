@@ -57,20 +57,54 @@ export const GameplayScreen: React.FC<GameplayScreenProps> = ({
 
     const startCamera = async () => {
       try {
-        stream = await navigator.mediaDevices.getUserMedia({
-          video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' },
-          audio: false,
-        });
+        let getUserMediaFn: ((constraints: any) => Promise<MediaStream>) | null = null;
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+          getUserMediaFn = (c: any) => navigator.mediaDevices.getUserMedia(c);
+        } else if ((navigator as any).getUserMedia || (navigator as any).webkitGetUserMedia || (navigator as any).mozGetUserMedia) {
+          const legacyFn = (navigator as any).getUserMedia || (navigator as any).webkitGetUserMedia || (navigator as any).mozGetUserMedia;
+          getUserMediaFn = (c: any) => new Promise((res, rej) => legacyFn.call(navigator, c, res, rej));
+        }
+
+        if (!getUserMediaFn) {
+          console.warn('No camera getUserMedia API available');
+          startNewRound(1, diffConfig.initialTime);
+          return;
+        }
+
+        if (videoRef.current) {
+          videoRef.current.setAttribute('playsinline', '');
+          videoRef.current.setAttribute('webkit-playsinline', '');
+          videoRef.current.setAttribute('muted', '');
+          videoRef.current.muted = true;
+        }
+
+        try {
+          stream = await getUserMediaFn({
+            video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' },
+            audio: false,
+          });
+        } catch {
+          stream = await getUserMediaFn({ video: { facingMode: 'user' }, audio: false })
+            .catch(() => getUserMediaFn!({ video: true, audio: false }));
+        }
 
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
-          videoRef.current.onloadedmetadata = () => {
-            videoRef.current?.play();
+          const playVideo = () => {
+            videoRef.current?.play().catch(() => {});
             startNewRound(1, diffConfig.initialTime);
           };
+          if (videoRef.current.readyState >= 2) {
+            playVideo();
+          } else {
+            videoRef.current.onloadedmetadata = playVideo;
+          }
+        } else {
+          startNewRound(1, diffConfig.initialTime);
         }
       } catch (err) {
         console.error('Camera stream failure in Gameplay:', err);
+        startNewRound(1, diffConfig.initialTime);
       }
     };
 
